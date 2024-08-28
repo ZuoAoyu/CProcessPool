@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
   // 工作进程的数量
   int workerNum = atoi(argv[3]);
 
-  // workerList 记录了所有工作进程的状态
+  // workerList 所有工作进程的状态
   processData_t *workerList =
       (processData_t *)calloc(sizeof(processData_t), workerNum);
 
