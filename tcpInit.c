@@ -1,5 +1,4 @@
 #include "head.h"
-#include <arpa/inet.h>
 
 int tcpInit(char *ip, char *port, int *pSockFd) {
   *pSockFd = socket(AF_INET, SOCK_STREAM, 0);
