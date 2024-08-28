@@ -1,7 +1,13 @@
 #ifndef __HEAD_H
 #define __HEAD_H
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <netinet/ip.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 enum workerStatus { FREE, BUSY };
@@ -13,5 +19,11 @@ typedef struct {
 
 void handleEvent();
 int makeChild(processData_t *pProcessData, int processNum);
+
+int tcpInit(char *ip, char *port, int *pSockFd);
+
+// 发送和接收 文件对象 的访问权
+int sendFd(int pipeFd, int fdToSend);
+int recvFd(int pipeFd, int *pfdtorecv);
 
 #endif
