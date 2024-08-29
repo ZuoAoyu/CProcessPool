@@ -48,4 +48,6 @@ typedef struct train_s {
 int recvFile(int netFd);
 int sendFile(int netFd);
 
+int recvn(int netFd, void *pstart, int len);
+
 #endif
