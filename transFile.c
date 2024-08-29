@@ -1,5 +1,31 @@
 #include "head.h"
 
+off_t getFileSize(int fd) {
+  // 记录当前文件指针的位置
+  off_t currentPos = lseek(fd, 0, SEEK_CUR);
+  if (currentPos == (off_t)-1) {
+    perror("lseek");
+    return -1;
+  }
+
+  // 将文件指针移动到文件末尾；
+  // 返回值是文件开头到当前指针位置的文件偏移量，
+  // 也即文件大小
+  off_t fileSize = lseek(fd, 0, SEEK_END);
+  if (fileSize == (off_t)-1) {
+    perror("lseek");
+    return -1;
+  }
+
+  // 将文件指针恢复到之前的位置
+  if (lseek(fd, currentPos, SEEK_SET) == (off_t)-1) {
+    perror("lseek");
+    return -1;
+  }
+
+  return fileSize;
+}
+
 int recvn(int netFd, void *buf, int total) {
   char *p = (char *)buf;
   long cursize = 0;
@@ -67,6 +93,11 @@ int sendFile(int netFd) {
   int fd = open(t.buf, O_RDONLY);
   ERROR_CHECK(fd, -1, "open");
 
+  off_t fileSize = getFileSize(fd);
+  off_t doneSize = 0;
+  off_t lastSize = 0;
+  off_t slice = fileSize / 100;
+
   while (1) {
     // 读取文件内容
     bzero(&t, sizeof(t));
@@ -86,11 +117,20 @@ int sendFile(int netFd) {
     // 发送 文件内容长度 和 文件内容
     ret = send(netFd, &t, sizeof(int) + t.dataLength, MSG_NOSIGNAL);
     ERROR_CHECK(ret, -1, "send");
+
+    doneSize += t.dataLength;
+    if (doneSize - lastSize >= slice) {
+      printf("%5.2lf%%\r", 100.0 * doneSize / fileSize);
+      fflush(stdout); // 清空缓冲区
+      lastSize = doneSize;
+    }
   }
 
   // 结束的时候发送一个车厢为 0 的小火车
   t.dataLength = 0;
   send(netFd, &t, sizeof(int), MSG_NOSIGNAL);
+
+  printf("100.00%%\n");
 
   close(fd);
 
