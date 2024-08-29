@@ -35,16 +35,14 @@ void handleEvent(int pipeFd) {
   while (1) {
     recvFd(pipeFd, &netFd);
 
-    char buf[1024] = {0};
-    recv(netFd, buf, sizeof(buf), 0);
-    printf("server worker: %s\n", buf);
-
-    send(netFd, buf, strlen(buf), 0);
+    /* char buf[1024] = {0}; */
+    /* recv(netFd, buf, sizeof(buf), 0); */
+    /* printf("server worker: %s\n", buf); */
+    /**/
+    /* send(netFd, buf, strlen(buf), 0); */
+    recvFile(netFd);
 
     close(netFd);
-
-    sleep(3); // 用于演示，减缓工作进程的处理速度
-
     // 通知父进程任务已完成，应重新将自己设为空闲
     pid_t pid = getpid();
     send(pipeFd, &pid, sizeof(pid_t), 0);

@@ -11,6 +11,14 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define ERROR_CHECK(result, num, msg)                                          \
+  {                                                                            \
+    if (result == num) {                                                       \
+      perror(msg);                                                             \
+      return -1;                                                               \
+    }                                                                          \
+  }
+
 enum workerStatus { FREE, BUSY };
 
 typedef struct {
@@ -31,5 +39,13 @@ int recvFd(int pipeFd, int *pfdtorecv);
 int epollCreate();
 int epollAdd(int fd, int epfd);
 int epollDel(int fd, int epfd);
+
+typedef struct train_s {
+  int dataLength;
+  char buf[1000];
+} train_t;
+
+int recvFile(int netFd);
+int sendFile(int netFd);
 
 #endif

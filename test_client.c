@@ -1,9 +1,10 @@
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
+/* #include <arpa/inet.h> */
+/* #include <stdio.h> */
+/* #include <stdlib.h> */
+/* #include <string.h> */
+/* #include <sys/socket.h> */
+/* #include <unistd.h> */
+#include "head.h"
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
@@ -26,13 +27,15 @@ int main(int argc, char *argv[]) {
     exit(-1);
   }
 
-  char buf[1024] = {0};
-  read(STDIN_FILENO, buf, sizeof(buf));
-  send(sockFd, buf, strlen(buf), 0);
+  /* char buf[1024] = {0}; */
+  /* read(STDIN_FILENO, buf, sizeof(buf)); */
+  /* send(sockFd, buf, strlen(buf), 0); */
+  /**/
+  /* bzero(buf, sizeof(buf)); */
+  /* recv(sockFd, buf, sizeof(buf), 0); */
+  /* printf("recv: %s\n", buf); */
 
-  bzero(buf, sizeof(buf));
-  recv(sockFd, buf, sizeof(buf), 0);
-  printf("recv: %s\n", buf);
+  sendFile(sockFd);
 
   close(sockFd);
 
