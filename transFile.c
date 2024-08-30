@@ -93,9 +93,13 @@ int sendFile(int netFd) {
   int fd = open(t.buf, O_RDONLY);
   ERROR_CHECK(fd, -1, "open");
 
+  // 文件总大小
   off_t fileSize = getFileSize(fd);
+  // 已发送总大小
   off_t doneSize = 0;
+  // 上次已发送总大小
   off_t lastSize = 0;
+  // 每个切片的文件大小
   off_t slice = fileSize / 100;
 
   while (1) {
