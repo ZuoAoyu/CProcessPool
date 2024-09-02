@@ -33,7 +33,13 @@ int makeChild(processData_t *pProcessData, int processNum) {
 void handleEvent(int pipeFd) {
   int netFd;
   while (1) {
-    recvFd(pipeFd, &netFd);
+    int exitFlag;
+    recvFd(pipeFd, &netFd, &exitFlag);
+
+    if (exitFlag == 1) {
+      puts("I am closing!");
+      exit(0);
+    }
 
     /* char buf[1024] = {0}; */
     /* recv(netFd, buf, sizeof(buf), 0); */
@@ -41,6 +47,9 @@ void handleEvent(int pipeFd) {
     /**/
     /* send(netFd, buf, strlen(buf), 0); */
     recvFile(netFd);
+
+    // 为测试 进程池优雅退出，增加工作进程完成工作的时间
+    sleep(20);
 
     close(netFd);
     // 通知父进程任务已完成，应重新将自己设为空闲

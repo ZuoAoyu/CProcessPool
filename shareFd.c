@@ -1,17 +1,16 @@
 #include "head.h"
 
 // 发送 文件对象 的"访问权"
-int sendFd(int pipeFd, int fdToSend) {
+int sendFd(int pipeFd, int fdToSend, int exitFlag) {
   struct msghdr hdr;
   /* memset 的作用：
     msg_name = NULL;
     msg_namelen = 0; */
   memset(&hdr, 0, sizeof(struct msghdr)); // 不可省略
   // 无论正文部分在业务中是否有用，必须要有正文：
-  char buf[] = "hello";
-  struct iovec iov[1];   // 一组离散的消息
-  iov[0].iov_base = buf; // 第一个消息的首地址
-  iov[0].iov_len = 5;    // 第一个消息的长度
+  struct iovec iov[1];          // 一组离散的消息
+  iov[0].iov_base = &exitFlag;  // 第一个消息的首地址
+  iov[0].iov_len = sizeof(int); // 第一个消息的长度
   // 将离散的消息放入 hdr 中
   hdr.msg_iov = iov;  // 正文消息
   hdr.msg_iovlen = 1; // 正文消息数量：1 条
@@ -40,7 +39,7 @@ int sendFd(int pipeFd, int fdToSend) {
 }
 
 // 接收 文件对象 的"访问权"
-int recvFd(int pipeFd, int *pfdtorecv) {
+int recvFd(int pipeFd, int *pfdtorecv, int *exitFlag) {
   // 接收和发送的区别：接收方不知道 buf 和 pcmsghdr 的内容
   struct msghdr hdr;
   /* memset 的作用：
@@ -48,10 +47,9 @@ int recvFd(int pipeFd, int *pfdtorecv) {
     msg_namelen = 0; */
   memset(&hdr, 0, sizeof(struct msghdr)); // 不可省略
   // 正文部分，结构和 sendmsg 一致
-  char buf[6] = {0};
-  struct iovec iov[1];   // 一组离散的消息
-  iov[0].iov_base = buf; // 第一个消息的首地址
-  iov[0].iov_len = 5;    // 第一个消息的长度
+  struct iovec iov[1];          // 一组离散的消息
+  iov[0].iov_base = exitFlag;   // 第一个消息的首地址
+  iov[0].iov_len = sizeof(int); // 第一个消息的长度
   // 将离散的消息放入 hdr 中
   hdr.msg_iov = iov;  // 正文消息
   hdr.msg_iovlen = 1; // 正文消息数量：1 条
@@ -75,7 +73,7 @@ int recvFd(int pipeFd, int *pfdtorecv) {
   // 通过 pcmsghdr 得到它的 data 成员的首地址，强转成 int*，再解引用
   *pfdtorecv = *(int *)CMSG_DATA(pcmsghdr);
 
-  printf("buf = %s, fd = %d\n", buf, *pfdtorecv);
+  printf("exitFlag = %d, fd = %d\n", *exitFlag, *pfdtorecv);
 
   return 0;
 }

@@ -37,8 +37,9 @@ int makeChild(processData_t *pProcessData, int processNum);
 int tcpInit(char *ip, char *port, int *pSockFd);
 
 // 发送和接收 文件对象 的访问权
-int sendFd(int pipeFd, int fdToSend);
-int recvFd(int pipeFd, int *pfdtorecv);
+// 增加 退出标志 exitFlag
+int sendFd(int pipeFd, int fdToSend, int exitFlag);
+int recvFd(int pipeFd, int *pfdtorecv, int *exitFlag);
 
 int epollCreate();
 int epollAdd(int fd, int epfd);
