@@ -64,20 +64,16 @@ int recvFile(int netFd) {
   recvn(netFd, &fileSize, t.dataLength);
   printf("fileSize = %ld\n", fileSize);
 
-  // 调整文件大小到指定大小
-  ftruncate(fd, fileSize);
+  // 创建一个匿名管道
+  int pipefds[2];
+  pipe(pipefds);
 
-  // 建立磁盘文件和用户态内存之间的映射
-  // 因为后面需要读写 mmap 映射的数据，所以前面 open 时的权限改为 O_RDWR
-  char *p =
-      (char *)mmap(NULL, fileSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-  ERROR_CHECK(p, MAP_FAILED, "mmap");
-
-  // 接收文件内容，一次性接收完
-  recvn(netFd, p, fileSize);
-
-  // 解除映射
-  munmap(p, fileSize);
+  int total = 0;
+  while (total < fileSize) {
+    int ret = splice(netFd, NULL, pipefds[1], NULL, 4096, SPLICE_F_MORE);
+    total += ret;
+    splice(pipefds[0], NULL, fd, NULL, ret, SPLICE_F_MORE);
+  }
 
   // 关闭打开的文件的 文件描述符
   close(fd);
@@ -107,11 +103,45 @@ int sendFile(int netFd) {
   // 使用 sendfile 发送文件
   sendfile(netFd, fd, NULL, statbuf.st_size);
 
-  // 结束的时候发送一个车厢为 0 的小火车（结束标志）
-  t.dataLength = 0;
-  send(netFd, &t, sizeof(int), MSG_NOSIGNAL);
+  // // 结束的时候发送一个车厢为 0 的小火车（结束标志）
+  // t.dataLength = 0;
+  // send(netFd, &t, sizeof(int), MSG_NOSIGNAL);
 
-  munmap(p, statbuf.st_size);
   close(fd);
   return 0;
 }
+
+/*
+#define _GNU_SOURCE         // See feature_test_macros(7)
+#include <fcntl.h>
+
+ssize_t splice(int fd_in, loff_t *off_in, int fd_out,
+              loff_t *off_out, size_t len, unsigned int flags);
+
+fd_in：源文件描述符，从这个文件描述符中读取数据。
+off_in：指向源文件偏移量的指针。如果 off_in 为
+NULL，则使用文件描述符当前的文件偏移量，并自动更新偏移量。否则，它指向的偏移量将被更新（仅对文件支持）。
+fd_out：目标文件描述符，数据将写入到这个文件描述符中。
+off_out：指向目标文件偏移量的指针。和 off_in 类似，如果 off_out 为
+NULL，则使用文件描述符当前的文件偏移量，并自动更新。 len：要移动的字节数。
+flags：控制行为的标志，常用的有：
+  SPLICE_F_MOVE：提示内核尽量移动数据，而不是复制数据。实际上，这个标志很少会被实际使用。
+  SPLICE_F_NONBLOCK：如果设置，splice 将以非阻塞方式执行。
+  SPLICE_F_MORE：提示内核在接下来的操作中可能会有更多的数据要写入，可以帮助优化。
+  SPLICE_F_GIFT：表示传输的文件描述符是一个“礼物”，接收方可以将其视为自己所有，类似于文件描述符转移。
+*/
+
+/*
+在接收方使用 splice 时，发送方在发送结束后不能再发送 结束标志：
+
+```
+// 结束的时候发送一个车厢为 0 的小火车（结束标志）
+t.dataLength = 0;
+send(netFd, &t, sizeof(int), MSG_NOSIGNAL);
+```
+
+因为在 recvFile(int netFd)
+最后一次循环里，这条数据有可能会被和末尾数据一起读到文件中，导致 接收到的数据 和
+发送的数据 不一致。
+
+*/

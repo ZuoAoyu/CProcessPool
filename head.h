@@ -1,5 +1,6 @@
 #ifndef __HEAD_H
 #define __HEAD_H
+#define _GNU_SOURCE
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/ip.h>
