@@ -5,13 +5,13 @@
 
 // 保存匿名管道两端的描述符，
 // 索引 0 是读端的文件描述符，索引 1 是写端的文件描述符
-int pipeFd[2];
+int pipeFds[2];
 
 void sigFunc(int signum) {
   printf("signum = %d\n", signum);
 
   // 向管道写端写入数据
-  write(pipeFd[1], "1", 1);
+  write(pipeFds[1], "1", 1);
   // 发送什么无所谓，只要发过去了，管道读端就绪了，就知道程序该退出了
   // ssize_t write(int fd, const void *buf, size_t count);
 }
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
   }
 
   // 创建匿名管道
-  pipe(pipeFd);
+  pipe(pipeFds);
 
   // 工作进程的数量
   int workerNum = atoi(argv[3]);
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   }
 
   // 将 管道读端 添加到 epoll 实例中进行监控
-  epollAdd(pipeFd[0], epfd);
+  epollAdd(pipeFds[0], epfd);
 
   int listenSize = workerNum + 1; // 监听的 fd 的数量
   // （1 个 socket 和 每个进程的 本地套接字 的一端（只用来读））
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
         }
 
         close(netFd); // 父进程把 netFd 的处理交给了子进程，所以父进程关闭套接字
-      } else if (readyList[i].data.fd == pipeFd[0]) {
+      } else if (readyList[i].data.fd == pipeFds[0]) {
         for (int i = 0; i < workerNum; ++i) {
           printf("send signal to worker %d.\n", workerList[i].pid);
           kill(workerList[i].pid, SIGKILL);
