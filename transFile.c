@@ -104,12 +104,8 @@ int sendFile(int netFd) {
   memcpy(t.buf, &statbuf.st_size, t.dataLength);
   send(netFd, &t, sizeof(int) + sizeof(off_t), MSG_NOSIGNAL);
 
-  // 建立磁盘文件和用户态内存之间的映射
-  char *p = (char *)mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
-  ERROR_CHECK(p, MAP_FAILED, "mmap");
-
-  // 一次性发送文件
-  send(netFd, p, statbuf.st_size, MSG_NOSIGNAL);
+  // 使用 sendfile 发送文件
+  sendfile(netFd, fd, NULL, statbuf.st_size);
 
   // 结束的时候发送一个车厢为 0 的小火车（结束标志）
   t.dataLength = 0;
