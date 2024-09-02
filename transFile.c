@@ -122,8 +122,7 @@ int sendFile(int netFd) {
     memcpy(t.buf, p + total, t.dataLength);
     total += t.dataLength;
 
-    // 发送数据
-    // 注意只发送缓冲区，因客户端是一次性接收
+    // 发送数据 注意只发送缓冲区
     ret = send(netFd, &t.buf, t.dataLength, MSG_NOSIGNAL);
     if (ret == -1) {
       perror("send");
