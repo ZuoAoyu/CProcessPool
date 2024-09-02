@@ -108,27 +108,8 @@ int sendFile(int netFd) {
   char *p = (char *)mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
   ERROR_CHECK(p, MAP_FAILED, "mmap");
 
-  off_t total = 0;
-  while (total < statbuf.st_size) {
-    bzero(&t, sizeof(t));
-
-    // “小火车”每次运多少数据
-    if (statbuf.st_size - total > sizeof(t.buf)) {
-      t.dataLength = sizeof(t.buf);
-    } else {
-      t.dataLength = statbuf.st_size - total;
-    }
-
-    memcpy(t.buf, p + total, t.dataLength);
-    total += t.dataLength;
-
-    // 发送数据 注意只发送缓冲区
-    ret = send(netFd, &t.buf, t.dataLength, MSG_NOSIGNAL);
-    if (ret == -1) {
-      perror("send");
-      break;
-    }
-  }
+  // 一次性发送文件
+  send(netFd, p, statbuf.st_size, MSG_NOSIGNAL);
 
   // 结束的时候发送一个车厢为 0 的小火车（结束标志）
   t.dataLength = 0;
