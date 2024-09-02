@@ -1,9 +1,27 @@
 /**
  * 进程池
- * 客户端可以向服务端传输文件（小文件、大文件均不惧）
-./server 127.0.0.1 2338 10
  */
 #include "head.h"
+
+// workerList 访问所有工作进程的状态 改为全局变量
+processData_t *workerList;
+
+// 工作进程的数量 改为全局变量
+int workerNum;
+
+void sigFunc(int signum) {
+  printf("signum = %d\n", signum);
+  for (int i = 0; i < workerNum; ++i) {
+    kill(workerList[i].pid, SIGKILL);
+  }
+
+  for (int i = 0; i < workerNum; ++i) {
+    wait(NULL);
+  }
+
+  puts("process pool is over!");
+  exit(0);
+}
 
 int main(int argc, char *argv[]) {
   if (argc != 4) {
@@ -13,11 +31,13 @@ int main(int argc, char *argv[]) {
   }
 
   // 工作进程的数量
-  int workerNum = atoi(argv[3]);
+  workerNum = atoi(argv[3]);
 
-  // workerList 访问所有工作进程的状态
-  processData_t *workerList =
-      (processData_t *)calloc(sizeof(processData_t), workerNum);
+  // workerList 访问所有工作进程的状态 改为全局变量
+  workerList = (processData_t *)calloc(sizeof(processData_t), workerNum);
+
+  // 注册信号处理函数
+  signal(SIGUSR1, sigFunc);
 
   // 创建指定数量的子进程作为工作进程
   makeChild(workerList, workerNum);
